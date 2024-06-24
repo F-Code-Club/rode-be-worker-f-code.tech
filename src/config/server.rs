@@ -9,4 +9,4 @@ pub static DATABASE_URL: Lazy<String> = Lazy::new(|| {
     )
 });
 
-pub static SERVER_PORT: Lazy<u16> = Lazy::new(|| env_or_default("WORKER_PORT", 8080));
+pub static WORKER_PORT: Lazy<u16> = Lazy::new(|| env_or_default("WORKER_PORT", 8080));
