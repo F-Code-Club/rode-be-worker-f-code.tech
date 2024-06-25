@@ -1,7 +1,7 @@
-name: CI R.ODE Backend Socket
+name: CI R.ODE Backend Worker Rust CI
 on:
   pull_request:
-    branches: ["develop"]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
