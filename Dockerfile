@@ -8,10 +8,10 @@ ENV DATABASE_URL=${DB_URL}
 RUN cargo build --release
 
 FROM ubuntu:22.04 AS final
-WORKDIR /rode-be-socket
-COPY --from=builder /rode-be-build/target/release/rode-be-socket /rode-be-socket
+WORKDIR /rode-be-worker
+COPY --from=builder /rode-be-build/target/release/rode-be-worker /rode-be-worker
 RUN apt-get update \
-    && apt-get install curl openjdk-8-jdk build-essential chromium-browser python3 -y \
+    && apt-get install curl build-essential -y \
     && apt-get clean
     
-ENTRYPOINT ["/rode-be-socket/rode-be-socket"]
+ENTRYPOINT ["/rode-be-worker/rode-be-worker"]
