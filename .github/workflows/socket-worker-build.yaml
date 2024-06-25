@@ -1,11 +1,12 @@
 on:
   push:
-    branches: ["akagiyuu/fix/docker", "master"]
+    branches: ["master"]
+  workflow_dispatch:
 
 jobs:
   socket-worker-build:
     name: Build source code to Docker image
-    runs-on: ubuntu-22.04
+    runs-on: fcode-japao-runner
     steps:
       - name: Checkout Develop
         uses: actions/checkout@v3
@@ -29,14 +30,16 @@ jobs:
         with:
           context: .
           push: true
+          build-args: |
+            DB_URL=postgres://${{secrets.DB_USERNAME}}:${{secrets.DB_PASSWORD}}@${{secrets.DB_HOST_LAN}}/${{secrets.DB_DATABASE}}
           tags: ${{ secrets.F_CODE_DOCKER_REGISTRY_URL }}/rode-be-worker:${{ github.ref_name == 'main' && 'stable' || 'nightly' }}
   
-  staging-deploy:
+  staging-worker-deploy:
     name: Deploy Socket Worker to F-Code Server
     runs-on: fcode-japao-runner
     needs: socket-worker-build
     env:
-      DATABASE_URL: postgres://${{secrets.DB_USERNAME}}:${{secrets.DB_PASSWORD}}@anataarisa.hopto.org/rode-be-test
+      DATABASE_URL: postgres://${{secrets.DB_USERNAME}}:${{secrets.DB_PASSWORD}}@${{secrets.DB_HOST}}/${{secrets.DB_DATABASE}}
     steps:
     - name: Checkout Develop
       uses: actions/checkout@v3
