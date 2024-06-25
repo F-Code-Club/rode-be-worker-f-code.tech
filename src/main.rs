@@ -3,6 +3,7 @@ use std::{env, str::FromStr};
 use once_cell::sync::Lazy;
 use sqlx::PgPool;
 use tokio::time::interval;
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 pub fn env_or_default<T: FromStr>(env_name: &'static str, default: T) -> T {
     match env::var(env_name) {
@@ -22,7 +23,7 @@ pub static DATABASE_URL: Lazy<String> = Lazy::new(|| {
 });
 
 async fn update_score_table(pool: &PgPool) -> anyhow::Result<()> {
-    sqlx::query!(
+    let result = sqlx::query!(
         r#"
 UPDATE scores
 SET total_score = score_data.score
@@ -40,11 +41,17 @@ WHERE scores.id = score_data.id;
     .execute(pool)
     .await?;
 
+    tracing::info!("Updated {} score(s)", result.rows_affected());
+
     Ok(())
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    tracing_subscriber::registry()
+        .with( tracing_subscriber::fmt::layer().pretty())
+        .init();
+
     let mut interval = interval(std::time::Duration::from_secs(5));
     let pool = PgPool::connect(&DATABASE_URL).await?;
 
