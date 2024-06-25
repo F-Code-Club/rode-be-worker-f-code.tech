@@ -24,16 +24,19 @@ pub static DATABASE_URL: Lazy<String> = Lazy::new(|| {
 async fn update_score_table(pool: &PgPool) -> anyhow::Result<()> {
     sqlx::query!(
         r#"
-        UPDATE scores
-        SET total_score = COALESCE(
-        (SELECT SUM(submit_histories.score)
-        FROM submit_histories
-        WHERE submit_histories.score_id = scores.id
-        GROUP BY scores.id),
-        0
-        );
-    "#
-    )
+UPDATE scores
+SET total_score = score_data.score
+FROM (
+	SELECT score_id as id, SUM(score) as score
+	FROM (
+		SELECT score_id, question_id, MAX(score) as score
+		FROM submit_histories
+		GROUP BY score_id, question_id
+	) score_per_question
+	GROUP BY score_id
+) score_data
+WHERE scores.id = score_data.id;
+    "#)
     .execute(pool)
     .await?;
 
