@@ -1,25 +1,53 @@
-mod app_state;
-mod config;
-mod update_score;
+use std::{env, str::FromStr};
 
-use std::net::SocketAddr;
-
-use app_state::AppState;
-use config::server::WORKER_PORT;
-use tokio::net::TcpListener;
+use once_cell::sync::Lazy;
+use sqlx::PgPool;
 use tokio::time::interval;
-use update_score::update_score_tables;
+
+pub fn env_or_default<T: FromStr>(env_name: &'static str, default: T) -> T {
+    match env::var(env_name) {
+        Err(_) => default,
+        Ok(raw) => match raw.parse() {
+            Ok(value) => value,
+            Err(_) => default,
+        },
+    }
+}
+
+pub static DATABASE_URL: Lazy<String> = Lazy::new(|| {
+    env_or_default(
+        "DATABASE_URL",
+        "postgres://user:password@host/database".to_string(),
+    )
+});
+
+async fn update_score_table(pool: &PgPool) -> anyhow::Result<()> {
+    sqlx::query!(
+        r#"
+        UPDATE scores
+        SET total_score = COALESCE(
+        (SELECT SUM(submit_histories.score)
+        FROM submit_histories
+        WHERE submit_histories.score_id = scores.id
+        GROUP BY scores.id),
+        0
+        );
+    "#
+    )
+    .execute(pool)
+    .await?;
+
+    Ok(())
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    TcpListener::bind(SocketAddr::new([0, 0, 0, 0].into(), *WORKER_PORT)).await?;
-    println!("Listening on port: 0.0.0.0:{:?}", *WORKER_PORT);
-
     let mut interval = interval(std::time::Duration::from_secs(5));
+    let pool = PgPool::connect(&DATABASE_URL).await?;
 
     loop {
         interval.tick().await;
 
-        update_score_tables(&AppState::new().await?.database).await?;
+        update_score_table(&pool).await?;
     }
 }
