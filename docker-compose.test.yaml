@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   rode-battle-worker:
-    container_name: rode-battle-socket-management
+    container_name: rode-battle-worker-management
     image: ${DOCKER_HUB_URL}/rode-be-worker:nightly
     restart: unless-stopped
     environment:
