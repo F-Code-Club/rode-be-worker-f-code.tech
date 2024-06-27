@@ -1,17 +1,15 @@
 version: '3.8'
 services:
   rode-battle-worker:
-    container_name: rode-battle-worker-management
+    container_name: rode-battle-worker-management-prod
     image: ${DOCKER_HUB_URL}/rode-be-worker:nightly
     restart: unless-stopped
     environment:
       DATABASE_URL: ${DATABASE_URL}
     networks:
-      - rode-battle-network-test
+      - rode-battle-network
       
 networks:
-  rode-battle-network-test:
-    name: rode-battle-network-test
+  rode-battle-network:
+    name: rode-battle-network
     external: true
-
-
